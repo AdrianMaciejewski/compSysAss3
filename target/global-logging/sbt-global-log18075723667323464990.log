@@ -1,0 +1,17 @@
+[debug] > Exec(testOnly HelloTester, None, None)
+[debug] Evaluating tasks: Test / testOnly
+[debug] Running task... Cancel: Signal, check cycles: false, forcegc: true
+[info] compiling 4 Scala sources to C:\Users\adrian\Downloads\codeA3_v2.0\codeA3_v2.0\target\scala-2.13\classes ...
+[info] done compiling
+[info] compiling 3 Scala sources to C:\Users\adrian\Downloads\codeA3_v2.0\codeA3_v2.0\target\scala-2.13\test-classes ...
+[info] done compiling
+[info] HelloTester:
+[info] HelloTester
+[info] - should pass
+[info] Run completed in 9 seconds, 82 milliseconds.
+[info] Total number of tests run: 1
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 24 s, completed Nov 19, 2025, 3:11:51 PM
+[debug] > Exec(idea-shell, None, None)
