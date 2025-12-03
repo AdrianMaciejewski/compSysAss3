@@ -45,6 +45,8 @@ class Accelerator extends Module {
   val regLoadAddr = RegInit(0.U(16.W)) //similar to 'coords' but exclusively used for loading
   val regI = RegInit(0.U(5.W)) //similar to 'regX'
 
+  val coordIncrement = RegInit(1.U)
+
   switch(stateReg) {
     is(idle) {
       when(io.start) {
@@ -178,42 +180,16 @@ class Accelerator extends Module {
     is(edgeT){
       outPxReg := 0.U
       io.writeEnable := true.B
-      coord := coord + 1.U
+      coord := coord + coordIncrement
       io.address := coord
       when(coord === 419.U) {
-        stateReg := edgeB
         coord := 780.U
-      } // otherwise( stateReg := edgeT) maybe?
-    }
-
-    is(edgeB){
-      outPxReg := 0.U
-      io.writeEnable := true.B
-      coord := coord + 1.U
-      io.address := coord
-      when(coord === 799.U) {
-        stateReg := edgeL
+      } .elsewhen(coord === 799.U) {
         coord := 420.U
-      }
-    }
-
-    is(edgeL){
-      outPxReg := 0.U
-      io.writeEnable := true.B
-      coord := coord + 20.U
-      io.address := coord
-      when(coord === 760.U) {
-        stateReg := edgeR
+        coordIncrement := 20.U
+      } .elsewhen(coord === 760.U) {
         coord := 439.U
-      }
-    }
-
-    is(edgeR) {
-      outPxReg := 0.U
-      io.writeEnable := true.B
-      coord := coord + 20.U
-      io.address := coord
-      when(coord === 779.U) {
+      } .elsewhen(coord === 779.U) {
         stateReg := done
       }
     }
