@@ -6,10 +6,10 @@ class Accelerator extends Module {
     val start = Input(Bool())
     val done = Output(Bool())
 
-    val address = Output(UInt (16.W))
-    val dataRead = Input(UInt (32.W))
-    val writeEnable = Output(Bool ())
-    val dataWrite = Output(UInt (32.W))
+    val address = Output(UInt(16.W))
+    val dataRead = Input(UInt(32.W))
+    val writeEnable = Output(Bool())
+    val dataWrite = Output(UInt(32.W))
 
   })
 
@@ -19,7 +19,7 @@ class Accelerator extends Module {
   io.writeEnable := false.B
 
   //States
-  val idle :: init :: read :: write :: check :: find :: compare :: done :: edgeT :: edgeB :: edgeL :: edgeR :: Nil = Enum (12)
+  val idle :: init :: read :: write :: check :: find :: compare :: done :: edgeT :: edgeB :: edgeL :: edgeR :: Nil = Enum(12)
   val stateReg = RegInit(idle)
 
   //Register used to write data
@@ -31,6 +31,7 @@ class Accelerator extends Module {
   val regs2 = RegInit(VecInit(Seq.fill(20)(0.U(32.W))))
   val regs3 = RegInit(VecInit(Seq.fill(20)(0.U(32.W))))
   val rows = VecInit(Seq(regs1, regs2, regs3))
+  val bufferRow = RegInit(VecInit(Seq.fill(20)(0.U(32.W))))
 
   //Used to compare neighbours
   val regU = RegInit(0.U(32.W))
@@ -39,7 +40,7 @@ class Accelerator extends Module {
   val regR = RegInit(0.U(32.W))
 
   val regX = RegInit(1.U(5.W)) // value from 1-20
-  val coord = RegInit(21.U(16.W)) //the current pixel under investigation
+  val coord = RegInit(20.U(16.W)) //the current pixel under investigation
   val rowSel = RegInit(0.U(2.W)) //wire to select regs from vector 'rows'
 
   val regLoadAddr = RegInit(0.U(16.W)) //similar to 'coords' but exclusively used for loading
@@ -57,9 +58,15 @@ class Accelerator extends Module {
     is(init) {
       io.address := regLoadAddr
       switch(rowSel) {
-        is(0.U) {regs1(regI) := io.dataRead}
-        is(1.U) {regs2(regI) := io.dataRead}
-        is(2.U) {regs3(regI) := io.dataRead}
+        is(0.U) {
+          regs1(regI) := io.dataRead
+        }
+        is(1.U) {
+          regs2(regI) := io.dataRead
+        }
+        is(2.U) {
+          regs3(regI) := io.dataRead
+        }
       }
       regLoadAddr := regLoadAddr + 1.U(16.W) //This should be assigned after data memory read
 
@@ -68,15 +75,15 @@ class Accelerator extends Module {
         regI := 0.U
         rowSel := 1.U
         stateReg := check
-      } .elsewhen(regLoadAddr === 39.U) { //go to next row
+      }.elsewhen(regLoadAddr === 39.U) { //go to next row
         regI := 0.U
         rowSel := 2.U
         stateReg := init
-      } .elsewhen(regLoadAddr === 19.U) { //go to next row
+      }.elsewhen(regLoadAddr === 19.U) { //go to next row
         regI := 0.U
         rowSel := 1.U
         stateReg := init
-      } .otherwise { //else keep loading
+      }.otherwise { //else keep loading
         regI := regI + 1.U(5.W)
         stateReg := init
       }
@@ -85,27 +92,26 @@ class Accelerator extends Module {
     // For i in range(20): load(i). Afterwards go to check
     is(read) {
       io.address := regLoadAddr
-      switch(rowSel) {
-        is(0.U) { regs3(regI) := io.dataRead }
-        is(1.U) { regs1(regI) := io.dataRead }
-        is(2.U) { regs2(regI) := io.dataRead }
-      }
+      bufferRow(regI) := io.dataRead
 
-      when(regI >= 20.U) {
-        when(coord >= 398.U(16.W)) {
-          coord := 400.U
-          stateReg := edgeT
-        } .otherwise {
-          rowSel := Mux(rowSel === 2.U, 0.U, rowSel + 1.U)
-          regI := 0.U
-          stateReg := check
-        }
-      } .otherwise {
+      when(regI < 20.U) {
         regI := regI + 1.U
         regLoadAddr := regLoadAddr + 1.U
         stateReg := read
+      }.elsewhen(coord >= 398.U(16.W)) {
+        coord := 400.U
+        stateReg := edgeT
+      }.otherwise {
+        regI := 0.U
+        stateReg := check
+
+        //rotate registers
+        regs1 := regs2
+        regs2 := regs3
+        regs3 := bufferRow
       }
     }
+
 
     // for i in range(20): Write. Afterwards go to read
     is(write) {
@@ -118,7 +124,7 @@ class Accelerator extends Module {
         regX := 1.U(5.W)
         coord := coord + 2.U(16.W)
         stateReg := read
-      } .otherwise{
+      }.otherwise {
         coord := coord + 1.U(16.W)
         stateReg := check
       }
@@ -126,60 +132,38 @@ class Accelerator extends Module {
 
     // Check whether current pixel is black. If so return with output 0
     is(check) {
-      val px = MuxLookup(rowSel, 0.U)(Seq(
-        0.U -> regs1(regX),
-        1.U -> regs2(regX),
-        2.U -> regs3(regX),
-      ))
-
-      when(px===0.U) {
+      when(regs2(regX) === 0.U) {
         outPxReg := 0.U
         stateReg := write
-      } .otherwise{
+      }.otherwise {
         stateReg := find
       }
     }
 
     // Find neighbour pixels
     is(find) {
-      regL := MuxLookup(rowSel, 0.U)(Seq(
-        0.U -> regs1(regX-1.U),
-        1.U -> regs2(regX-1.U),
-        2.U -> regs3(regX-1.U),
-      ))
-      regR := MuxLookup(rowSel, 0.U)(Seq(
-        0.U -> regs1(regX+1.U),
-        1.U -> regs2(regX+1.U),
-        2.U -> regs3(regX+1.U),
-      ))
-      regU := MuxLookup(rowSel, 0.U)(Seq(
-        0.U -> regs3(regX),
-        1.U -> regs1(regX),
-        2.U -> regs2(regX),
-      ))
-      regD := MuxLookup(rowSel, 0.U)(Seq(
-        0.U -> regs2(regX),
-        1.U -> regs3(regX),
-        2.U -> regs1(regX),
-      ))
-
-      outPxReg := Mux(regU===0.U(32.W) || regD===0.U(32.W) || regL===0.U(32.W) || regR===0.U(32.W), 0.U(32.W), 255.U(32.W))
+      outPxReg := Mux(
+        regs1(regX) === 0.U(32.W) ||
+        regs3(regX) === 0.U(32.W) ||
+        regs2(regX - 1.U) === 0.U(32.W) ||
+        regs2(regX + 1.U) === 0.U(32.W),
+        0.U(32.W), 255.U(32.W))
       stateReg := write
     }
 
-    is(edgeT){
+    is(edgeT) {
       outPxReg := 0.U
       io.writeEnable := true.B
       coord := coord + coordIncrement
       io.address := coord
       when(coord === 419.U) {
         coord := 780.U
-      } .elsewhen(coord === 799.U) {
+      }.elsewhen(coord === 799.U) {
         coord := 420.U
         coordIncrement := 20.U
-      } .elsewhen(coord === 760.U) {
+      }.elsewhen(coord === 760.U) {
         coord := 439.U
-      } .elsewhen(coord === 779.U) {
+      }.elsewhen(coord === 779.U) {
         stateReg := done
       }
     }
@@ -189,5 +173,4 @@ class Accelerator extends Module {
       // remain in done state
     }
   }
-
 }
