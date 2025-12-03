@@ -19,7 +19,7 @@ class Accelerator extends Module {
   io.writeEnable := false.B
 
   //States
-  val idle :: init :: read :: write :: check :: find :: done :: edgeT  :: Nil = Enum(8)
+  val idle :: init :: read :: write :: check :: find :: done :: edge  :: Nil = Enum(8)
   val stateReg = RegInit(idle)
 
   //Register used to write data
@@ -94,7 +94,7 @@ class Accelerator extends Module {
         stateReg := read
       }.elsewhen(coord >= 398.U(16.W)) {
         coord := 400.U
-        stateReg := edgeT
+        stateReg := edge
       }.otherwise {
         regI := 0.U
         stateReg := check
@@ -145,7 +145,7 @@ class Accelerator extends Module {
       stateReg := write
     }
 
-    is(edgeT) {
+    is(edge) {
       outPxReg := 0.U
       io.writeEnable := true.B
       coord := coord + coordIncrement
