@@ -1,1 +1,11 @@
-[debug] Running TaskDef(SystemTopTester, org.scalatest.tools.Framework$$anon$1@38743990, false, [SuiteSelector])
+[debug] Running TaskDef(SystemTopTester, org.scalatest.tools.Framework$$anon$1@4e5d9317, false, [SuiteSelector])
+[info] SystemTopTester:
+[info] SystemTopTester
+[info] - should pass
+[info] Run completed in 24 seconds, 376 milliseconds.
+[info] Total number of tests run: 1
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[debug] Passed tests:
+[debug] 	SystemTopTester

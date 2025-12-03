@@ -19,7 +19,7 @@ class Accelerator extends Module {
   io.writeEnable := false.B
 
   //States
-  val idle :: init :: read :: write :: check :: find :: done :: edge  :: Nil = Enum(8)
+  val idle :: init :: read :: write :: check :: done :: edge  :: Nil = Enum(7)
   val stateReg = RegInit(idle)
 
   //Register used to write data
@@ -130,19 +130,14 @@ class Accelerator extends Module {
         outPxReg := 0.U
         stateReg := write
       }.otherwise {
-        stateReg := find
+        outPxReg := Mux(
+          regs1(regX) === 0.U(32.W) ||
+            regs3(regX) === 0.U(32.W) ||
+            regs2(regX - 1.U) === 0.U(32.W) ||
+            regs2(regX + 1.U) === 0.U(32.W),
+          0.U(32.W), 255.U(32.W))
+        stateReg := write
       }
-    }
-
-    // Find neighbour pixels
-    is(find) {
-      outPxReg := Mux(
-        regs1(regX) === 0.U(32.W) ||
-        regs3(regX) === 0.U(32.W) ||
-        regs2(regX - 1.U) === 0.U(32.W) ||
-        regs2(regX + 1.U) === 0.U(32.W),
-        0.U(32.W), 255.U(32.W))
-      stateReg := write
     }
 
     is(edge) {
