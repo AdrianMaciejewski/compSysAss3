@@ -63,18 +63,16 @@ class Accelerator extends Module {
         }
       }
       regLoadAddr := regLoadAddr + 1.U(16.W) //This should be assigned after data memory read
+      regI := 0.U
 
       // for i in range(60): load(i). Switch selected row at 20 and 40. Continue to 'check' at 60
       when(regLoadAddr === 59.U) { //exit 'start'
-        regI := 0.U
         rowSel := 1.U
         stateReg := check
       }.elsewhen(regLoadAddr === 39.U) { //go to next row
-        regI := 0.U
         rowSel := 2.U
         stateReg := init
       }.elsewhen(regLoadAddr === 19.U) { //go to next row
-        regI := 0.U
         rowSel := 1.U
         stateReg := init
       }.otherwise { //else keep loading
@@ -128,7 +126,6 @@ class Accelerator extends Module {
     is(check) {
       when(regs2(regX) === 0.U) {
         outPxReg := 0.U
-        stateReg := write
       }.otherwise {
         outPxReg := Mux(
           regs1(regX) === 0.U(32.W) ||
@@ -136,8 +133,8 @@ class Accelerator extends Module {
             regs2(regX - 1.U) === 0.U(32.W) ||
             regs2(regX + 1.U) === 0.U(32.W),
           0.U(32.W), 255.U(32.W))
-        stateReg := write
       }
+      stateReg := write
     }
 
     is(edge) {
