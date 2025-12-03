@@ -51,7 +51,17 @@ class Accelerator extends Module {
 
     is(init) {
       io.address := regLoadAddr
-      rows(rowSel)(regI) := io.dataRead
+      switch(rowSel) {
+        is(0.U) {
+          regs1(regI) := io.dataRead
+        }
+        is(1.U) {
+          regs2(regI) := io.dataRead
+        }
+        is(2.U) {
+          regs3(regI) := io.dataRead
+        }
+      }
       regLoadAddr := regLoadAddr + 1.U(16.W) //This should be assigned after data memory read
 
       // for i in range(60): load(i). Switch selected row at 20 and 40. Continue to 'check' at 60
