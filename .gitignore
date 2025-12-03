@@ -1,0 +1,40 @@
+# Scala / sbt
+target/
+**/target/
+project/target/
+project/project/
+lib_managed/
+dist/
+.bsp/
+.cache/
+*.class
+*.log
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# Metals / Bloop
+.metals/
+.bloop/
+
+# Chisel / FIRRTL / Verilator outputs
+test_run_dir*
+generated/
+*/generated/
+*.fir
+*.v
+*.sv
+*.vo
+*.vcd
+
+# OS and editors
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Misc
+node_modules/
+build/
