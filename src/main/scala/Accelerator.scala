@@ -64,25 +64,21 @@ class Accelerator extends Module {
       regLoadAddr := regLoadAddr + 1.U(16.W) //This should be assigned after data memory read
 
       // for i in range(60): load(i). Switch selected row at 20 and 40. Continue to 'check' at 60
-      when(regLoadAddr === 19.U) { //go to next row
+      when(regLoadAddr === 59.U) { //exit 'start'
+        regI := 0.U
+        rowSel := 1.U
+        stateReg := check
+      } .elsewhen(regLoadAddr === 39.U) { //go to next row
+        regI := 0.U
+        rowSel := 2.U
+        stateReg := init
+      } .elsewhen(regLoadAddr === 19.U) { //go to next row
         regI := 0.U
         rowSel := 1.U
         stateReg := init
-      }.otherwise {
-        when(regLoadAddr === 39.U) { //go to next row
-          regI := 0.U
-          rowSel := 2.U
-          stateReg := init
-        }.otherwise {
-          when(regLoadAddr === 59.U) { //exit 'start'
-            regI := 0.U
-            rowSel := 1.U
-            stateReg := check
-          }.otherwise { //else keep loading
-            regI := regI + 1.U(5.W)
-            stateReg := init
-          }
-        }
+      } .otherwise { //else keep loading
+        regI := regI + 1.U(5.W)
+        stateReg := init
       }
     }
 
@@ -94,20 +90,19 @@ class Accelerator extends Module {
         is(1.U) { regs1(regI) := io.dataRead }
         is(2.U) { regs2(regI) := io.dataRead }
       }
-      when(regI >= 20.U) { //if done loading
-        when(coord >= 398.U(16.W)) { //if all rows are done, exit program
+
+      when(regI >= 20.U) {
+        when(coord >= 398.U(16.W)) {
           coord := 400.U
           stateReg := edgeT
-        } .otherwise{ //continue the program
-          rowSel := Mux(rowSel === 2.U, 0.U, rowSel + 1.U) //cycle selection through 0, 1 and 2
+        } .otherwise {
+          rowSel := Mux(rowSel === 2.U, 0.U, rowSel + 1.U)
           regI := 0.U
-//          regLoadAddr := regLoadAddr + 1.U(5.W)
-//          coord := coord + 1.U(16.W)
           stateReg := check
         }
-      } .otherwise{ //keep loading
-        regI := regI+1.U(5.W)
-        regLoadAddr := regLoadAddr + 1.U(5.W)
+      } .otherwise {
+        regI := regI + 1.U
+        regLoadAddr := regLoadAddr + 1.U
         stateReg := read
       }
     }
@@ -168,11 +163,6 @@ class Accelerator extends Module {
         2.U -> regs1(regX),
       ))
 
-      stateReg := compare
-    }
-
-    // Erode if one neighbour is black
-    is(compare) {
       outPxReg := Mux(regU===0.U(32.W) || regD===0.U(32.W) || regL===0.U(32.W) || regR===0.U(32.W), 0.U(32.W), 255.U(32.W))
       stateReg := write
     }
