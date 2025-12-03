@@ -19,7 +19,7 @@ class Accelerator extends Module {
   io.writeEnable := false.B
 
   //States
-  val idle :: init :: read :: write :: check :: find :: compare :: done :: edgeT :: edgeB :: edgeL :: edgeR :: Nil = Enum(12)
+  val idle :: init :: read :: write :: check :: find :: done :: edgeT  :: Nil = Enum(8)
   val stateReg = RegInit(idle)
 
   //Register used to write data
@@ -33,14 +33,8 @@ class Accelerator extends Module {
   val rows = VecInit(Seq(regs1, regs2, regs3))
   val bufferRow = RegInit(VecInit(Seq.fill(20)(0.U(32.W))))
 
-  //Used to compare neighbours
-  val regU = RegInit(0.U(32.W))
-  val regD = RegInit(0.U(32.W))
-  val regL = RegInit(0.U(32.W))
-  val regR = RegInit(0.U(32.W))
-
   val regX = RegInit(1.U(5.W)) // value from 1-20
-  val coord = RegInit(20.U(16.W)) //the current pixel under investigation
+  val coord = RegInit(21.U(16.W)) //the current pixel under investigation
   val rowSel = RegInit(0.U(2.W)) //wire to select regs from vector 'rows'
 
   val regLoadAddr = RegInit(0.U(16.W)) //similar to 'coords' but exclusively used for loading
@@ -57,17 +51,7 @@ class Accelerator extends Module {
 
     is(init) {
       io.address := regLoadAddr
-      switch(rowSel) {
-        is(0.U) {
-          regs1(regI) := io.dataRead
-        }
-        is(1.U) {
-          regs2(regI) := io.dataRead
-        }
-        is(2.U) {
-          regs3(regI) := io.dataRead
-        }
-      }
+      rows(rowSel)(regI) := io.dataRead
       regLoadAddr := regLoadAddr + 1.U(16.W) //This should be assigned after data memory read
 
       // for i in range(60): load(i). Switch selected row at 20 and 40. Continue to 'check' at 60
