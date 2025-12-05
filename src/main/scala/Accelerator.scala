@@ -142,13 +142,21 @@ class Accelerator extends Module {
       io.writeEnable := true.B
       coord := coord + coordIncrement
       io.address := coord
+
+      //cycles through coordinates 400-419
       when(coord === 419.U) {
         coord := 780.U
+
+        //cycles through coordinates 780-799
       }.elsewhen(coord === 799.U) {
         coord := 420.U
         coordIncrement := 20.U
+
+        //cycles through coordinates 420-760 incrementing by 20 each time (coordinates 400 and 780 already written)
       }.elsewhen(coord === 760.U) {
         coord := 439.U
+
+        //cycles through coordinates 439-779
       }.elsewhen(coord === 779.U) {
         stateReg := done
       }
